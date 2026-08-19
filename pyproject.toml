@@ -1,0 +1,53 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pexafy"
+version = "0.1.0"
+description = "Python client for the Pexafy stock photo search API"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [{name = "Marouane Tijani", email = "marouanetijani@hotmail.fr"}]
+keywords = ["stock photos", "image search", "semantic search", "api client"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Graphics",
+]
+dependencies = ["httpx>=0.24"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "pytest-asyncio>=0.21", "respx>=0.20", "ruff>=0.5"]
+
+[project.urls]
+Homepage = "https://pexafy.com"
+Documentation = "https://docs.pexafy.com"
+Source = "https://github.com/Pexafy/pexafy-python"
+Issues = "https://github.com/Pexafy/pexafy-python/issues"
+
+[project.scripts]
+pexafy = "pexafy.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pexafy"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+# Optional[...] rather than `| None` — the package still supports 3.9, and the
+# postponed-annotation trick is easy to break by accident in a dataclass.
+ignore = ["UP007", "UP045"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
