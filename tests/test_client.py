@@ -1,4 +1,5 @@
 import httpx
+import pytest
 import respx
 from conftest import API, envelope, photo
 
@@ -31,15 +32,47 @@ def test_api_key_goes_in_the_header(client):
 
 
 @respx.mock
-def test_list_filters_are_sent_comma_separated(client):
+def test_list_filters_are_sent_as_repeated_parameters(client):
+    """?source=a&source=b, not ?source=a,b.
+
+    The comma separated form reaches the server as one value: it matches no
+    source and no licence, and an unknown orientation is dropped instead of
+    filtering, so the caller silently gets an unfiltered page back.
+    """
     route = respx.get(f"{API}/search/photos").mock(
         return_value=httpx.Response(200, json=envelope([]))
     )
     client.search("x", source=["Pexels", "Unsplash"], orientation=["landscape", "square"])
 
     params = route.calls[0].request.url.params
-    assert params["source"] == "Pexels,Unsplash"
-    assert params["orientation"] == "landscape,square"
+    assert params.get_list("source") == ["Pexels", "Unsplash"]
+    assert params.get_list("orientation") == ["landscape", "square"]
+
+
+@respx.mock
+def test_a_comma_separated_string_is_split_into_repeated_parameters(client):
+    route = respx.get(f"{API}/search/photos").mock(
+        return_value=httpx.Response(200, json=envelope([]))
+    )
+    client.search("x", source="Pexels, Unsplash")
+
+    assert route.calls[0].request.url.params.get_list("source") == ["Pexels", "Unsplash"]
+
+
+def test_several_colours_are_refused_rather_than_silently_narrowed(client):
+    """The server keeps the last color_name and filters on it without saying so."""
+    with pytest.raises(TypeError, match="color_name takes a single value"):
+        client.search("x", color_name=["blue", "red"])
+
+
+@respx.mock
+def test_fields_stays_comma_separated(client):
+    route = respx.get(f"{API}/search/photos").mock(
+        return_value=httpx.Response(200, json=envelope([]))
+    )
+    client.search("x", fields=["photo_id", "urls"])
+
+    assert route.calls[0].request.url.params["fields"] == "photo_id,urls"
 
 
 @respx.mock

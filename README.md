@@ -44,7 +44,9 @@ result = client.search(
 print(len(result), "photos in", result.took_ms, "ms")
 ```
 
-List filters accept either a list or a comma separated string.
+`orientation`, `source` and `license_type` take several values, as a list or as a comma
+separated string. `color_name` takes one: the API filters on a single colour, and passing
+more raises rather than quietly filtering on whichever one arrived last.
 
 ## Paging
 

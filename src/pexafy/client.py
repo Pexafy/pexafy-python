@@ -32,12 +32,46 @@ ImageInput = Union[str, Path, bytes, BinaryIO]
 
 
 def _csv(value: Union[str, Sequence[str], None]) -> Optional[str]:
-    """The API takes repeated filters as a comma separated list."""
+    """Join a field selection into the comma separated string `fields` expects."""
     if value is None:
         return None
     if isinstance(value, str):
         return value
     return ",".join(str(v) for v in value)
+
+
+def _multi(value: Union[str, Sequence[str], None]) -> Optional[list]:
+    """Normalise a multi-valued filter into a list.
+
+    `orientation`, `source` and `license_type` are declared server-side as
+    repeated query parameters, so a list has to go out as ?source=a&source=b.
+    Sending "a,b" as one value matches nothing (source, license_type) or is
+    dropped altogether (orientation), and neither failure says anything. A
+    comma separated string is accepted here for convenience and split.
+    """
+    if value is None:
+        return None
+    if isinstance(value, str):
+        values = [v.strip() for v in value.split(",")]
+    else:
+        values = [str(v).strip() for v in value]
+    values = [v for v in values if v]
+    return values or None
+
+
+def _single(name: str, value: Any) -> Optional[str]:
+    """Guard a filter the API accepts only once.
+
+    Passing several values would not fail: the server keeps the last one and
+    filters on that, so the caller gets a plausible-looking result set built
+    from a filter they did not ask for.
+    """
+    if value is None or isinstance(value, str):
+        return value
+    raise TypeError(
+        f"{name} takes a single value, got {value!r}. "
+        f"The API filters on one {name} at a time."
+    )
 
 
 def _clean(params: dict[str, Any]) -> dict[str, Any]:
@@ -153,12 +187,12 @@ class _Base:
     ) -> dict[str, Any]:
         return _clean({
             "q": q,
-            "color_name": _csv(color_name),
+            "color_name": _single("color_name", color_name),
             "color_hex": color_hex,
             "color_tolerance": color_tolerance,
-            "orientation": _csv(orientation),
-            "source": _csv(source),
-            "license_type": _csv(license_type),
+            "orientation": _multi(orientation),
+            "source": _multi(source),
+            "license_type": _multi(license_type),
             "photographer": photographer,
             "per_page": per_page,
             "limit": limit,
