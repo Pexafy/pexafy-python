@@ -9,7 +9,7 @@ description = "Python client for the Pexafy stock photo search API"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
-authors = [{name = "Marouane Tijani", email = "marouanetijani@hotmail.fr"}]
+authors = [{name = "Marouane Tijani", email = "marouane@pexafy.com"}]
 keywords = ["stock photos", "image search", "semantic search", "api client"]
 classifiers = [
     "Development Status :: 4 - Beta",
