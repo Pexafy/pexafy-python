@@ -78,3 +78,54 @@ def test_key_can_come_from_the_environment(monkeypatch):
     monkeypatch.setenv("PEXAFY_API_KEY", "from-env")
     with Client() as client:
         assert client.api_key == "from-env"
+
+
+@respx.mock
+def test_per_minute_rate_limit_is_retried():
+    route = respx.get(f"{API}/search/photos").mock(side_effect=[
+        httpx.Response(429, headers={"retry-after": "0"},
+                       json=error_body("RATE_LIMITED", "Rate limit exceeded. Retry after 0s.")),
+        httpx.Response(200, json={"success": True, "data": [], "meta": {}}),
+    ])
+    with Client("k", max_retries=2) as c:
+        assert len(c.search("x")) == 0
+    assert route.call_count == 2
+
+
+@pytest.mark.parametrize("code,headers", [
+    ("DAILY_QUOTA_EXCEEDED", {"retry-after": "36000"}),
+    ("QUOTA_EXCEEDED", {}),
+])
+@respx.mock
+def test_spent_quota_raises_without_retrying(code, headers):
+    route = respx.get(f"{API}/search/photos").mock(
+        return_value=httpx.Response(429, headers=headers, json=error_body(code, "quota spent"))
+    )
+    with Client("k", max_retries=2) as c, pytest.raises(errors.RateLimitError) as exc:
+        c.search("x")
+    assert route.call_count == 1
+    assert exc.value.code == code
+
+
+@respx.mock
+async def test_spent_quota_raises_without_retrying_async():
+    from pexafy import AsyncClient
+
+    route = respx.get(f"{API}/search/photos").mock(
+        return_value=httpx.Response(429, headers={"retry-after": "36000"},
+                                    json=error_body("DAILY_QUOTA_EXCEEDED", "quota spent"))
+    )
+    async with AsyncClient("k", max_retries=2) as c:
+        with pytest.raises(errors.RateLimitError):
+            await c.search("x")
+    assert route.call_count == 1
+
+
+def test_version_matches_package_metadata():
+    import re
+    from pathlib import Path
+
+    import pexafy
+
+    pyproject = (Path(__file__).parent.parent / "pyproject.toml").read_text()
+    assert pexafy.__version__ == re.search(r'^version = "(.+)"', pyproject, re.M).group(1)

@@ -125,6 +125,29 @@ class _Base:
         return f"{self.base_url}/api/v1{path}"
 
     @staticmethod
+    def _should_retry(response: httpx.Response) -> bool:
+        """A 5xx is retried; a 429 only when it is the per-minute rate limit.
+
+        The API also answers 429 when the daily or monthly quota is spent
+        (`DAILY_QUOTA_EXCEEDED`, `QUOTA_EXCEEDED`). Waiting a minute cannot clear
+        those — the daily one comes back at midnight UTC — so they raise at once
+        instead of stalling the caller through the retries.
+        """
+        if response.status_code != 429:
+            return response.status_code in RETRY_STATUS
+        try:
+            code = (response.json().get("error") or {}).get("code")
+        except (ValueError, AttributeError):
+            code = None
+        if code:
+            return code == "RATE_LIMITED"
+        header = response.headers.get("retry-after")
+        try:
+            return header is None or float(header) <= 60
+        except ValueError:
+            return True
+
+    @staticmethod
     def _retry_delay(attempt: int, response: Optional[httpx.Response]) -> float:
         """Honour Retry-After when the server sends one, back off otherwise."""
         if response is not None:
@@ -251,7 +274,7 @@ class Client(_Base):
                 time.sleep(self._retry_delay(attempt, None))
                 continue
 
-            if response.status_code in RETRY_STATUS and attempt < self.max_retries:
+            if self._should_retry(response) and attempt < self.max_retries:
                 last_response = response
                 time.sleep(self._retry_delay(attempt, response))
                 continue
@@ -420,7 +443,7 @@ class AsyncClient(_Base):
                 await asyncio.sleep(self._retry_delay(attempt, None))
                 continue
 
-            if response.status_code in RETRY_STATUS and attempt < self.max_retries:
+            if self._should_retry(response) and attempt < self.max_retries:
                 last_response = response
                 await asyncio.sleep(self._retry_delay(attempt, response))
                 continue

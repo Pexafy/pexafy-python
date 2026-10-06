@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.2
+
+- A 429 is retried only when it is the per-minute rate limit (`RATE_LIMITED`).
+  An exhausted daily or monthly quota (`DAILY_QUOTA_EXCEEDED`,
+  `QUOTA_EXCEEDED`) now raises `RateLimitError` at once: the daily one used to
+  be retried with a 60-second wait each time, stalling the caller for two
+  minutes before failing anyway.
+- `pexafy.__version__` (and the `user-agent` it builds) said 0.1.0 in the 0.1.1
+  release; it now matches the package version.
+
 ## 0.1.1
 
 Fixed multi-valued filters, which never worked against the live API.

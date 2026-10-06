@@ -9,7 +9,7 @@
 Get a key at https://pexafy.com — the free tier does not need a card.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.2"
 
 from .client import DEFAULT_BASE_URL, AsyncClient, Client
 from .errors import (
