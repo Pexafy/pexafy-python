@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.0
+
+The client covers every public endpoint of the API, with both clients alike,
+and its methods are now stable: within 1.x, an upgrade does not break code
+written against 1.0.
+
+- `AsyncClient` gains the methods only `Client` had: photographer lookup
+  (`suggest_photographers`, `photographer`), collections (`collections`,
+  `create_collection`, `collection`, `delete_collection`, `add_to_collection`,
+  `remove_from_collection`) and usage history (`usage_daily`, `usage_monthly`,
+  `usage_by_key`). A test now fails if the two clients drift apart again.
+- `get_photo(photo_id, fields=...)` selects the fields returned, like `search`.
+- `usage_daily(days=...)` and `usage_monthly(months=...)` set the history
+  window (up to 90 days and 24 months; the API defaults to 30 and 12).
+- Classified "Production/Stable" on PyPI.
+
 ## 0.1.2
 
 - A 429 is retried only when it is the per-minute rate limit (`RATE_LIMITED`).

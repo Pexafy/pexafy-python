@@ -327,8 +327,11 @@ class Client(_Base):
 
     # -- photos ---------------------------------------------------------
 
-    def get_photo(self, photo_id: str) -> Photo:
-        return Photo.from_dict(self._request("GET", f"/photos/{photo_id}")["data"])
+    def get_photo(
+        self, photo_id: str, *, fields: Union[str, Sequence[str], None] = None
+    ) -> Photo:
+        params = _clean({"fields": _csv(fields)})
+        return Photo.from_dict(self._request("GET", f"/photos/{photo_id}", params=params)["data"])
 
     def similar(self, photo_id: str, **filters: Any) -> SearchResult:
         params = self._search_params(None, **filters)
@@ -390,11 +393,13 @@ class Client(_Base):
     def usage(self) -> dict[str, Any]:
         return self._request("GET", "/usage")["data"]
 
-    def usage_daily(self) -> dict[str, Any]:
-        return self._request("GET", "/usage/daily")["data"]
+    def usage_daily(self, *, days: Optional[int] = None) -> dict[str, Any]:
+        """Requests per day; ``days`` looks back up to 90 (the API's default is 30)."""
+        return self._request("GET", "/usage/daily", params=_clean({"days": days}))["data"]
 
-    def usage_monthly(self) -> dict[str, Any]:
-        return self._request("GET", "/usage/monthly")["data"]
+    def usage_monthly(self, *, months: Optional[int] = None) -> dict[str, Any]:
+        """Requests per month; ``months`` goes back up to 24 (the API's default is 12)."""
+        return self._request("GET", "/usage/monthly", params=_clean({"months": months}))["data"]
 
     def usage_by_key(self) -> dict[str, Any]:
         return self._request("GET", "/usage/by-key")["data"]
@@ -479,8 +484,11 @@ class AsyncClient(_Base):
         )
         return self._to_search_result(body)
 
-    async def get_photo(self, photo_id: str) -> Photo:
-        body = await self._request("GET", f"/photos/{photo_id}")
+    async def get_photo(
+        self, photo_id: str, *, fields: Union[str, Sequence[str], None] = None
+    ) -> Photo:
+        params = _clean({"fields": _csv(fields)})
+        body = await self._request("GET", f"/photos/{photo_id}", params=params)
         return Photo.from_dict(body["data"])
 
     async def similar(self, photo_id: str, **filters: Any) -> SearchResult:
@@ -500,5 +508,58 @@ class AsyncClient(_Base):
     async def licenses(self) -> list[dict[str, Any]]:
         return (await self._request("GET", "/facets/licenses"))["data"]
 
+    async def suggest_photographers(
+        self, q: str, *, limit: Optional[int] = None
+    ) -> list[Photographer]:
+        params = _clean({"q": q, "limit": limit})
+        body = await self._request("GET", "/facets/photographers/suggest", params=params)
+        return [Photographer.from_dict(p) for p in body["data"]]
+
+    async def photographer(self, username: str) -> list[Photographer]:
+        body = await self._request("GET", f"/facets/photographers/{username}")
+        return [Photographer.from_dict(p) for p in body["data"]]
+
+    # -- collections ----------------------------------------------------
+
+    async def collections(self) -> list[Collection]:
+        body = await self._request("GET", "/collections")
+        return [Collection.from_dict(c) for c in body["data"]]
+
+    async def create_collection(
+        self, name: str, *, description: Optional[str] = None, is_public: bool = False
+    ) -> Collection:
+        payload = _clean({"name": name, "description": description, "is_public": is_public})
+        body = await self._request("POST", "/collections", json=payload)
+        return Collection.from_dict(body["data"])
+
+    async def collection(self, collection_id: int) -> Collection:
+        body = await self._request("GET", f"/collections/{collection_id}")
+        return Collection.from_dict(body["data"])
+
+    async def delete_collection(self, collection_id: int) -> None:
+        await self._request("DELETE", f"/collections/{collection_id}")
+
+    async def add_to_collection(self, collection_id: int, photo_id: str) -> CollectionItem:
+        body = await self._request(
+            "POST", f"/collections/{collection_id}/photos", json={"photo_id": photo_id}
+        )
+        return CollectionItem.from_dict(body["data"])
+
+    async def remove_from_collection(self, collection_id: int, photo_id: str) -> None:
+        await self._request("DELETE", f"/collections/{collection_id}/photos/{photo_id}")
+
+    # -- usage ----------------------------------------------------------
+
     async def usage(self) -> dict[str, Any]:
         return (await self._request("GET", "/usage"))["data"]
+
+    async def usage_daily(self, *, days: Optional[int] = None) -> dict[str, Any]:
+        params = _clean({"days": days})
+        return (await self._request("GET", "/usage/daily", params=params))["data"]
+
+    async def usage_monthly(self, *, months: Optional[int] = None) -> dict[str, Any]:
+        params = _clean({"months": months})
+        return (await self._request("GET", "/usage/monthly", params=params))["data"]
+
+    async def usage_by_key(self) -> dict[str, Any]:
+        return (await self._request("GET", "/usage/by-key"))["data"]

@@ -145,14 +145,24 @@ Check `photo.license_type` if your use depends on it.
 | `search(q, **filters)` | one page of results |
 | `iter_search(q, max_results=None, **filters)` | every page, cursor handled |
 | `search_by_image(image, **filters)` | match an image you supply |
-| `get_photo(photo_id)` | one photo by id |
+| `get_photo(photo_id, fields=None)` | one photo by id |
 | `similar(photo_id, **filters)` | photos close to an existing one |
 | `colors()` `sources()` `orientations()` `licenses()` | filter values you can use |
 | `suggest_photographers(q)` `photographer(username)` | photographer lookup |
-| `collections()` `create_collection(name)` `add_to_collection(id, photo_id)` | saved sets |
-| `usage()` `usage_daily()` `usage_monthly()` `usage_by_key()` | where you are against your quota |
+| `collections()` `create_collection(name)` `collection(id)` `delete_collection(id)` | saved sets |
+| `add_to_collection(id, photo_id)` `remove_from_collection(id, photo_id)` | photos in a set |
+| `usage()` `usage_daily(days=None)` `usage_monthly(months=None)` `usage_by_key()` | where you are against your quota |
 
-Full API documentation is at [docs.pexafy.com](https://docs.pexafy.com).
+`AsyncClient` has every one of these methods, awaitable. Full API documentation is
+at [docs.pexafy.com](https://docs.pexafy.com); the limits of each plan are at
+[docs.pexafy.com/plans](https://docs.pexafy.com/plans).
+
+## Versioning
+
+The package follows [semantic versioning](https://semver.org). Within 1.x, an
+upgrade does not break code written against 1.0: methods and their parameters
+stay, and new ones are added alongside. Every change is listed in the
+[changelog](https://github.com/Pexafy/pexafy-python/blob/main/CHANGELOG.md).
 
 ## Requirements
 

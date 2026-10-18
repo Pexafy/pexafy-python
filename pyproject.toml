@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pexafy"
-version = "0.1.2"
+version = "1.0.0"
 description = "Python client for the Pexafy stock photo search API"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -12,7 +12,7 @@ license = "MIT"
 authors = [{name = "Marouane Tijani", email = "marouane@pexafy.com"}]
 keywords = ["stock photos", "image search", "semantic search", "api client"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.9",

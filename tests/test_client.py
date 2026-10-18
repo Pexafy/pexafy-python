@@ -161,3 +161,26 @@ def test_collections_roundtrip(client):
     respx.post(f"{API}/collections/7/photos").mock(return_value=httpx.Response(
         200, json=envelope({"id": 1, "photo_id": "abc", "added_at": "2026-08-19T10:01:00Z"})))
     assert client.add_to_collection(7, "abc").photo_id == "abc"
+
+
+@respx.mock
+def test_get_photo_sends_fields_comma_separated(client):
+    route = respx.get(f"{API}/photos/abc").mock(
+        return_value=httpx.Response(200, json=envelope(photo("abc")))
+    )
+    client.get_photo("abc", fields=["photo_id", "urls"])
+    assert route.calls.last.request.url.params["fields"] == "photo_id,urls"
+
+
+@respx.mock
+def test_usage_history_windows_are_sent_only_when_given(client):
+    daily = respx.get(f"{API}/usage/daily").mock(
+        return_value=httpx.Response(200, json=envelope({"days": []})))
+    monthly = respx.get(f"{API}/usage/monthly").mock(
+        return_value=httpx.Response(200, json=envelope({"months": []})))
+    client.usage_daily()
+    assert "days" not in daily.calls.last.request.url.params
+    client.usage_daily(days=7)
+    client.usage_monthly(months=3)
+    assert daily.calls.last.request.url.params["days"] == "7"
+    assert monthly.calls.last.request.url.params["months"] == "3"
