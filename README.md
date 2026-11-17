@@ -1,6 +1,6 @@
 # pexafy-python
 
-Python client for the [Pexafy](https://pexafy.com) image search API. Search a
+Python client for the [Pexafy Stock Photos](https://pexafy.com) API. Search a
 catalogue of free stock photos by describing what you want, or by handing it an
 image to match.
 

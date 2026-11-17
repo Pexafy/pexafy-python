@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pexafy"
-version = "1.0.0"
-description = "Python client for the Pexafy stock photo search API"
+version = "1.0.1"
+description = "Python client for the Pexafy Stock Photos API"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"

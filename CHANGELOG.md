@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+The product is now named Pexafy Stock Photos, and the package summary and the
+README say so. No code change: the package, module and class names stay the same.
+
 ## 1.0.0
 
 The client covers every public endpoint of the API, with both clients alike,
